@@ -22,7 +22,7 @@ CREATE TABLE pull_requests(
 CREATE TABLE pull_requests_users (
     user_id varchar(64) NOT NULL,
     pr_id varchar(64) NOT NULL,
-    PRIMARY KEY (user_id, pr_id)
+    PRIMARY KEY (pr_id, user_id)
 );
 
 CREATE UNIQUE INDEX idx_users_id ON users (id);

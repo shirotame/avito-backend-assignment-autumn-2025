@@ -6,8 +6,9 @@ import (
 )
 
 type BaseUserRepository interface {
-	GetUser(ctx context.Context, userId string) (*entity.User, error)
-	GetUsers(ctx context.Context, teamName string) ([]entity.User, error)
+	GetById(ctx context.Context, id string) (*entity.User, error)
+	GetByTeamName(ctx context.Context, teamName string) ([]entity.User, error)
+	GetActiveByTeamName(ctx context.Context, teamName string) ([]entity.User, error)
 	AddUsers(ctx context.Context, new []entity.User) error
 	UpdateUser(ctx context.Context, userId string, update *entity.UserUpdate) error
 }
@@ -18,13 +19,11 @@ type BaseTeamRepository interface {
 }
 
 type BasePullRequestRepository interface {
-	GetPullRequests(ctx context.Context, prId string) ([]entity.PullRequest, error)
-	GetPullRequest(ctx context.Context, prId string) (*entity.PullRequest, error)
-	AddPullRequest(ctx context.Context, ent entity.PullRequest) error
-	UpdatePullRequest(ctx context.Context, prId string, update *entity.PullRequestUpdate) error
-}
+	GetPullRequestsByAuthorId(ctx context.Context, authorId string) ([]entity.PullRequest, error)
+	GetPullRequestById(ctx context.Context, prId string) (*entity.PullRequest, error)
 
-type BasePullRequestUserUserRepository interface {
-	AddPullRequestUser(ctx context.Context, userId string, prId string) (*entity.PullRequestUser, error)
-	DeletePullRequestUser(ctx context.Context, userId string, prId string) error
+	AddPullRequest(ctx context.Context, ent *entity.PullRequest) error
+
+	AddReviewerToPullRequest(ctx context.Context, prId string, reviewerId string) error
+	RemoveReviewerFromPullRequest(ctx context.Context, prId string, reviewerId string) error
 }

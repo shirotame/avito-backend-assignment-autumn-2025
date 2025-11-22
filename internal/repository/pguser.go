@@ -17,14 +17,14 @@ type PostgresUserRepository struct {
 }
 
 func NewPostgresUserRepository(baseLogger *slog.Logger, pool *pgxpool.Pool) BaseUserRepository {
-	logger := baseLogger.With("module", "user_repository")
+	logger := baseLogger.With("module", "userrepo")
 	return &PostgresUserRepository{
 		pool:   pool,
 		logger: logger,
 	}
 }
 
-func (p *PostgresUserRepository) GetUser(ctx context.Context, userId string) (*entity.User, error) {
+func (p *PostgresUserRepository) GetById(ctx context.Context, id string) (*entity.User, error) {
 	query := `
         SELECT id, username, team_name, is_active
         FROM users
@@ -32,15 +32,20 @@ func (p *PostgresUserRepository) GetUser(ctx context.Context, userId string) (*e
     `
 	var result entity.User
 
-	err := p.pool.QueryRow(ctx, query, userId).Scan(&result)
+	err := p.pool.QueryRow(ctx, query, id).Scan(
+		&result.Id,
+		&result.Username,
+		&result.TeamName,
+		&result.IsActive,
+	)
 	if err != nil {
-		p.logger.Debug("failed to GetUser", "userId", userId, "error", err)
+		p.logger.Debug("failed to GetById", "id", id, "error", err)
 		return nil, err
 	}
 	return &result, nil
 }
 
-func (p *PostgresUserRepository) GetUsers(ctx context.Context, teamName string) ([]entity.User, error) {
+func (p *PostgresUserRepository) GetByTeamName(ctx context.Context, teamName string) ([]entity.User, error) {
 	query := `
         SELECT id, username, team_name, is_active
         FROM users
@@ -48,10 +53,58 @@ func (p *PostgresUserRepository) GetUsers(ctx context.Context, teamName string) 
     `
 	var result []entity.User
 
-	err := p.pool.QueryRow(ctx, query, teamName).Scan(&result)
+	rows, err := p.pool.Query(ctx, query, teamName)
 	if err != nil {
-		p.logger.Debug("failed to GetUsers", "teamName", teamName, "error", err)
+		p.logger.Debug("failed to GetByTeamName", "teamName", teamName, "error", err)
 		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var user entity.User
+
+		err := rows.Scan(
+			&user.Id,
+			&user.Username,
+			&user.TeamName,
+			&user.IsActive)
+		if err != nil {
+			p.logger.Debug("failed to GetByTeamName", "teamName", teamName, "error", err)
+			return nil, err
+		}
+		result = append(result, user)
+	}
+	return result, nil
+}
+
+func (p *PostgresUserRepository) GetActiveByTeamName(ctx context.Context, teamName string) ([]entity.User, error) {
+	query := `
+        SELECT id, username, team_name, is_active
+        FROM users
+        WHERE team_name = $1 AND is_active = true
+    `
+	var result []entity.User
+
+	rows, err := p.pool.Query(ctx, query, teamName)
+	if err != nil {
+		p.logger.Debug("failed to GetActiveByTeamName", "teamName", teamName, "error", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var user entity.User
+
+		err := rows.Scan(
+			&user.Id,
+			&user.Username,
+			&user.TeamName,
+			&user.IsActive)
+		if err != nil {
+			p.logger.Debug("failed to GetActiveByTeamName", "teamName", teamName, "error", err)
+			return nil, err
+		}
+		result = append(result, user)
 	}
 	return result, nil
 }
@@ -88,6 +141,10 @@ func (p *PostgresUserRepository) AddUsers(ctx context.Context, new []entity.User
 }
 
 func (p *PostgresUserRepository) UpdateUser(ctx context.Context, userId string, update *entity.UserUpdate) error {
+	if update.Username == nil && update.TeamName == nil && update.IsActive == nil {
+		return errs.ErrBadFilter("Username or TeamName or IsActive is required")
+	}
+
 	query := `
 		UPDATE users
 		SET 
