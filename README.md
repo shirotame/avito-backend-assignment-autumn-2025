@@ -1,6 +1,16 @@
 # Тестовое задание Avito (Backend, 2025)
 Репозиторий тестового задания для прохождения отбора на стажировку в Avito (Backend) (autumn 2025)
 
+# Использованные технологии
+
+- Go 1.25.3
+- PostgreSQL 18
+- [go-chi/chi](https://github.com/go-chi/chi) в качестве HTTP роутера
+- [jackc/pgx](https://github.com/jackc/pgx) для работы с PostgreSQL
+- [golang-migrate/migrate](https://github.com/golang-migrate/migrate) для миграций БД
+
+
+
 # Запуск
 
 Предварительно установите Docker и Docker Compose
@@ -12,8 +22,7 @@ git clone https://github.com/shirotame/avito-backend-assignment-autumn-2025
 cd avito-backend-assignment-autumn-2025
 ```
 
-Для запуска проекта используйте `docker-compose up --build`. Необходимо предварительно сделать `.env` файл с настройками
-окружения (пример в [`example.env`](https://github.com/shirotame/avito-backend-assignment-autumn-2025/blob/main/example.env))
+Для запуска проекта используйте `docker-compose up --build`
 
 ```bash
 docker-compose up --build
@@ -29,6 +38,10 @@ docker-compose --file "test.docker-compose.yml" up --build
 
 При успешном прохождении тестов контейнер завершится с кодом *0*. `prservice-1 exited with code 0`.
 
+# Дополнительные задания
+
+- Был добавлен линтер `golangci-lint`. Его конфигруция находится в файле [`.golangci.yml`](https://github.com/shirotame/avito-backend-assignment-autumn-2025/blob/main/.golangci.yml)
+- Были реализованы unit тесты слоя репозиториев
 
 # Вопросы
 
