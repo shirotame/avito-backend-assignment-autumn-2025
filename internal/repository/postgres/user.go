@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type PostgresUserRepository struct {
@@ -198,23 +197,14 @@ func (p *PostgresUserRepository) AddUsers(
 		currIdx++
 	}
 	query = fmt.Sprintf("%s %s", query, strings.Join(values, ", "))
+	query = fmt.Sprintf(`%s 
+		ON CONFLICT (id) DO UPDATE SET 
+			username = EXCLUDED.username, 
+			team_name = EXCLUDED.team_name,
+			is_active = EXCLUDED.is_active
+		`, query)
 	_, err := db.Exec(ctx, query, args...)
 	if err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) {
-			if pgErr.Code == "23505" {
-				p.logger.Debug(
-					"failed to AddUsers: some of users already exists",
-					"query",
-					query,
-					"args",
-					args,
-					"error",
-					err,
-				)
-				return errs.ErrUserAlreadyExists
-			}
-		}
 		p.logger.Debug("failed to AddUsers", "query", query, "args", args, "error", err)
 		return errs.ErrInternal("failed to AddUsers", err)
 	}
