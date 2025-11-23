@@ -4,6 +4,5 @@ WORKDIR app
 
 COPY internal ./internal/
 COPY migrations ./migrations/
-COPY mocks ./mocks/
 COPY test ./test/
 COPY go.mod go.sum ./
