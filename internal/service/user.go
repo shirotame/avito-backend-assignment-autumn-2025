@@ -2,9 +2,10 @@ package service
 
 import (
 	"context"
+	"log/slog"
+
 	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/entity"
 	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/repository"
-	"log/slog"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )

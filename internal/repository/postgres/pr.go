@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
+	"time"
+
 	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/entity"
 	errs "github.com/shirotame/avito-backend-assignment-autumn-2025/internal/errors"
 	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/repository"
-	"log/slog"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -101,6 +102,37 @@ func (p *PostgresPullRequestRepository) GetPullRequestById(
 		return nil, errs.ErrInternal("failed to GetPullRequestById", err)
 	}
 	return &pr, nil
+}
+
+func (p *PostgresPullRequestRepository) GetOpenPullRequestsByReviewers(ctx context.Context, db repository.Querier) ([]entity.UserStats, error) {
+	query := `
+		SELECT u.id, u.username, COUNT(*) FROM users u
+		JOIN pull_requests_users pr_u ON u.id = pr_u.user_id
+		JOIN pull_requests pr ON pr_u.pr_id = pr.id
+		WHERE pr.status = $1 GROUP BY u.id
+	`
+	var userStats []entity.UserStats
+	rows, err := db.Query(ctx, query, entity.StatusOpen)
+	if err != nil {
+		p.logger.Debug("failed to GetOpenPullRequestsByReviewerId")
+		return nil, errs.ErrInternal("failed to GetOpenPullRequestsByReviewerId", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var stats entity.UserStats
+		err := rows.Scan(
+			&stats.Id,
+			&stats.Username,
+			&stats.OpenPullRequestsCount,
+		)
+		if err != nil {
+			p.logger.Debug("failed to GetOpenPullRequestsByReviewerId: scan error")
+			return nil, errs.ErrInternal("failed to GetOpenPullRequestsByReviewerId: scan error", err)
+		}
+		userStats = append(userStats, stats)
+	}
+	return userStats, nil
 }
 
 func (p *PostgresPullRequestRepository) AddPullRequest(

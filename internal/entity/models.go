@@ -30,3 +30,9 @@ type PullRequest struct {
 	Status          string
 	UpdatedAt       *time.Time
 }
+
+type UserStats struct {
+	Id                    string
+	Username              string
+	OpenPullRequestsCount int
+}

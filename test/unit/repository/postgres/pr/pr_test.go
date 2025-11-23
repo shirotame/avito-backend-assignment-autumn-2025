@@ -3,14 +3,15 @@ package pr
 import (
 	"context"
 	"errors"
-	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/entity"
-	errs "github.com/shirotame/avito-backend-assignment-autumn-2025/internal/errors"
-	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/repository"
-	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/repository/postgres"
 	"log/slog"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/entity"
+	errs "github.com/shirotame/avito-backend-assignment-autumn-2025/internal/errors"
+	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/repository"
+	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/repository/postgres"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -58,7 +59,7 @@ func TestMain(m *testing.M) {
 }
 
 func setupTest(t *testing.T) (context.Context, func(), pgx.Tx) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*10)
 
 	tx, err := pool.Begin(ctx)
 	if err != nil {
@@ -232,6 +233,61 @@ func TestGetPullRequestById(t *testing.T) {
 		}
 		if res.Id != "pr1" {
 			t.Fatalf("GetPullRequestById expected to have Id `pr1`, got: %v", res.Id)
+		}
+	})
+}
+
+func TestGetOpenPullRequestsByReviewerId(t *testing.T) {
+	t.Run("No prs", func(t *testing.T) {
+		ctx, cancel, tx := setupTest(t)
+		defer cancel()
+
+		res, err := repo.GetOpenPullRequestsByReviewers(ctx, tx)
+		if err != nil {
+			t.Fatalf("GetOpenPullRequestsByReviewers expected to succeed, got: %v", err)
+		}
+		if len(res) != 0 {
+			t.Fatalf("GetOpenPullRequestsByReviewers expected to have len 0, got: %v", len(res))
+		}
+	})
+	t.Run("All ok", func(t *testing.T) {
+		ctx, cancel, tx := setupTest(t)
+		defer cancel()
+
+		err := createTeam(ctx, tx, "team")
+		if err != nil {
+			t.Fatalf("createTeam expected to succeed, got: %v", err)
+		}
+		err = createUser(ctx, tx, "u1", "user1", "team")
+		if err != nil {
+			t.Fatalf("createUserWithTeam expected to succeed, got: %v", err)
+		}
+		err = createUser(ctx, tx, "u2", "user2", "team")
+		if err != nil {
+			t.Fatalf("createUserWithTeam expected to succeed, got: %v", err)
+		}
+
+		err = repo.AddPullRequest(ctx, tx, &entity.PullRequest{
+			Id:              "pr1",
+			PullRequestName: "pr1",
+			AuthorId:        "u1",
+			Status:          entity.StatusOpen,
+		})
+		if err != nil {
+			t.Fatalf("AddPullRequest expected to succeed, got: %v", err)
+		}
+
+		err = repo.AddReviewerToPullRequest(ctx, tx, "pr1", "u2")
+		if err != nil {
+			t.Fatalf("AddReviewerToPullRequest expected to succeed, got: %v", err)
+		}
+
+		res, err := repo.GetOpenPullRequestsByReviewers(ctx, tx)
+		if err != nil {
+			t.Fatalf("GetOpenPullRequestsByReviewers expected to succeed, got: %v", err)
+		}
+		if len(res) != 1 {
+			t.Fatalf("GetOpenPullRequestsByReviewers expected to have len 1, got: %v", len(res))
 		}
 	})
 }

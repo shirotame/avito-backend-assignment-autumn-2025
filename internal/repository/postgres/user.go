@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
+	"strings"
+
 	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/entity"
 	errs "github.com/shirotame/avito-backend-assignment-autumn-2025/internal/errors"
 	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/repository"
-	"log/slog"
-	"strings"
 
 	"github.com/jackc/pgx/v5"
 )

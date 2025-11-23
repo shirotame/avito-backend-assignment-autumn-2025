@@ -3,12 +3,13 @@ package service
 import (
 	"context"
 	"errors"
-	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/entity"
-	errs "github.com/shirotame/avito-backend-assignment-autumn-2025/internal/errors"
-	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/repository"
 	"log/slog"
 	"math/rand/v2"
 	"time"
+
+	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/entity"
+	errs "github.com/shirotame/avito-backend-assignment-autumn-2025/internal/errors"
+	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -33,6 +34,23 @@ func NewPullRequestService(
 		prRepo:   prRepo,
 		userRepo: userRepo,
 	}
+}
+
+func (s *PullRequestService) GetOpenPullRequestsByReviewers(ctx context.Context) ([]entity.UserStatsDTO, error) {
+	res, err := s.prRepo.GetOpenPullRequestsByReviewers(ctx, s.pool)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]entity.UserStatsDTO, len(res))
+	for i, r := range res {
+		result[i] = entity.UserStatsDTO{
+			UserId:           r.Id,
+			Username:         r.Username,
+			OpenPullRequests: r.OpenPullRequestsCount,
+		}
+	}
+	return result, nil
 }
 
 func (s *PullRequestService) CreatePullRequest(

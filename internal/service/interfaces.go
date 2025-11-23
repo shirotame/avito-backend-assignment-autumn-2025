@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+
 	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/entity"
 )
 
@@ -16,6 +17,7 @@ type BaseTeamService interface {
 }
 
 type BasePullRequestService interface {
+	GetOpenPullRequestsByReviewers(ctx context.Context) ([]entity.UserStatsDTO, error)
 	CreatePullRequest(
 		ctx context.Context,
 		dto entity.PullRequestCreateDTO,

@@ -42,7 +42,8 @@ docker-compose --file "test.docker-compose.yml" up --build
 
 - Был добавлен линтер `golangci-lint`. Его конфигруция находится в файле [`.golangci.yml`](https://github.com/shirotame/avito-backend-assignment-autumn-2025/blob/main/.golangci.yml)
 - Были реализованы unit тесты слоя репозиториев
-- Был написал интеграционный (e2e) тест работы приложения
+- Был создан простой эндпоинт статистики `/pullRequest/openByReviewers` (количество открытых PR по ревьюверу)
+- Был написал e2e тест работы приложения
 
 # Вопросы
 

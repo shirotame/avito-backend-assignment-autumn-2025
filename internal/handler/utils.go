@@ -3,10 +3,11 @@ package handler
 import (
 	"encoding/json"
 	"errors"
+	"net/http"
+
 	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/entity"
 	errs "github.com/shirotame/avito-backend-assignment-autumn-2025/internal/errors"
 	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/errors/codes"
-	"net/http"
 )
 
 func mapToErrorDTO(err error) entity.ErrorDTO {

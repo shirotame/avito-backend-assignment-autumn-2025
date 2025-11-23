@@ -3,15 +3,16 @@ package main
 import (
 	"context"
 	"fmt"
+	"log/slog"
+	"net/http"
+	"os"
+	"path/filepath"
+
 	"github.com/shirotame/avito-backend-assignment-autumn-2025/api"
 	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/handler"
 	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/repository/postgres"
 	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/service"
 	"github.com/shirotame/avito-backend-assignment-autumn-2025/web"
-	"log/slog"
-	"net/http"
-	"os"
-	"path/filepath"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -92,6 +93,7 @@ func main() {
 	})
 
 	router.Route("/pullRequest", func(r chi.Router) {
+		r.Get("/openByReviewers", prHandler.GetOpenPullRequestsByReviewers)
 		r.Post("/create", prHandler.CreatePullRequest)
 		r.Post("/merge", prHandler.MergePullRequest)
 		r.Post("/reassign", prHandler.ReassignPullRequest)
