@@ -85,12 +85,17 @@ func (s *PullRequestService) CreatePullRequest(ctx context.Context, dto entity.P
 		}
 	}
 
+	err = tx.Commit(ctx)
+	if err != nil {
+		return nil, errs.ErrInternal("error commit transaction", err)
+	}
+
 	return &entity.PullRequestResponseDTO{
 		PullRequest: entity.PullRequestDTO{
-			PullRequestId:     "",
-			PullRequestName:   "",
-			AuthorId:          "",
-			Status:            "",
+			PullRequestId:     dto.PullRequestId,
+			PullRequestName:   dto.PullRequestName,
+			AuthorId:          dto.AuthorId,
+			Status:            entity.StatusOpen,
 			AssignedReviewers: assigned,
 		},
 	}, nil
@@ -187,14 +192,18 @@ func (s *PullRequestService) ReassignPullRequest(ctx context.Context, dto entity
 		if currId == dto.OldReviewerId && len(activeUsers) == 1 {
 			return nil, errs.ErrNoActiveUsers
 		}
-		if currId != dto.OldReviewerId {
-			err := s.prRepo.AddReviewerToPullRequest(ctx, tx, dto.OldReviewerId, currId)
+		if currId != dto.OldReviewerId && currId != exists.AuthorId {
+			err := s.prRepo.AddReviewerToPullRequest(ctx, tx, dto.PullRequestId, currId)
 			if err != nil {
 				return nil, err
 			}
 			newAssignedIdPtr = currId
 			break
 		}
+	}
+
+	if newAssignedIdPtr == "" {
+		return nil, errs.ErrNoActiveUsers
 	}
 
 	assigned, err := s.userRepo.GetReviewersByPrId(ctx, tx, dto.PullRequestId)
@@ -204,6 +213,11 @@ func (s *PullRequestService) ReassignPullRequest(ctx context.Context, dto entity
 	assignedIds := make([]string, len(assigned))
 	for i, u := range assigned {
 		assignedIds[i] = u.Id
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return nil, errs.ErrInternal("error commit transaction", err)
 	}
 
 	return &entity.PullRequestResponseDTO{
