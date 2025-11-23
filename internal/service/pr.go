@@ -73,11 +73,22 @@ func (s *PullRequestService) CreatePullRequest(
 		return nil, err
 	}
 
-	assigned := make([]string, 0)
-	for range 2 {
-		rndId := rand.IntN(len(availableUsers))
-		if currId := availableUsers[rndId].Id; currId != author.Id {
-			assigned = append(assigned, availableUsers[rndId].Id)
+	assigned := make([]string, 0, 2)
+	validCount := 0
+	for _, user := range availableUsers {
+		if user.Id == dto.AuthorId {
+			continue
+		}
+
+		validCount++
+
+		if len(assigned) < 2 {
+			assigned = append(assigned, user.Id)
+		} else {
+			j := rand.IntN(validCount)
+			if j < 2 {
+				assigned[j] = user.Id
+			}
 		}
 	}
 

@@ -17,7 +17,6 @@ var ErrReassignOnMergedPR = errors.New("cannot reassign on merged PR")
 
 var ErrTeamAlreadyExists = fmt.Errorf("team %w", ErrBaseAlreadyExists)
 var ErrPullRequestAlreadyExists = fmt.Errorf("pull request %w", ErrBaseAlreadyExists)
-var ErrUserAlreadyExists = fmt.Errorf("user %w", ErrBaseAlreadyExists)
 
 func ErrNotFound(entity string, param string, value any) error {
 	return fmt.Errorf("%s with %s: %v %w", entity, param, value, ErrBaseNotFound)

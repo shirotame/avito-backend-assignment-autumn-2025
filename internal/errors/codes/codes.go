@@ -5,7 +5,6 @@ const (
 	NotFound          = "NOT_FOUND"
 	BadRequest        = "BAD_REQUEST"
 	TeamExists        = "TEAM_EXISTS"
-	UserExists        = "USER_EXISTS"
 	PullRequestExists = "PR_EXISTS"
 	PullRequestMerged = "PR_MERGED"
 	NotAssigned       = "NOT_ASSIGNED"

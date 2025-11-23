@@ -16,12 +16,6 @@ func mapToErrorDTO(err error) entity.ErrorDTO {
 			Message: "resource not found",
 		}
 	}
-	if errors.Is(err, errs.ErrUserAlreadyExists) {
-		return entity.ErrorDTO{
-			Code:    codes.UserExists,
-			Message: "some of users id or username already exists",
-		}
-	}
 	if errors.Is(err, errs.ErrTeamAlreadyExists) {
 		return entity.ErrorDTO{
 			Code:    codes.TeamExists,
@@ -82,7 +76,6 @@ func mapToHttpStatus(err error) int {
 	}
 	if errors.Is(err, errs.ErrTeamAlreadyExists) ||
 		errors.Is(err, errs.ErrPullRequestAlreadyExists) ||
-		errors.Is(err, errs.ErrUserAlreadyExists) ||
 		errors.Is(err, errs.ErrUserNotAssigned) ||
 		errors.Is(err, errs.ErrNoActiveUsers) ||
 		errors.Is(err, errs.ErrReassignOnMergedPR) {
