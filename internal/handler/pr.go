@@ -12,7 +12,10 @@ type PullRequestHandler struct {
 	srv    service.BasePullRequestService
 }
 
-func NewPullRequestHandler(baseLogger *slog.Logger, srv service.BasePullRequestService) *PullRequestHandler {
+func NewPullRequestHandler(
+	baseLogger *slog.Logger,
+	srv service.BasePullRequestService,
+) *PullRequestHandler {
 	logger := baseLogger.With("module", "prhandler")
 	return &PullRequestHandler{
 		logger: logger,

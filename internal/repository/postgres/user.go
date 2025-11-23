@@ -25,7 +25,11 @@ func NewPostgresUserRepository(baseLogger *slog.Logger) repository.BaseUserRepos
 	}
 }
 
-func (p *PostgresUserRepository) GetById(ctx context.Context, db repository.Querier, id string) (*entity.User, error) {
+func (p *PostgresUserRepository) GetById(
+	ctx context.Context,
+	db repository.Querier,
+	id string,
+) (*entity.User, error) {
 	query := `
         SELECT id, username, team_name, is_active
         FROM users
@@ -50,7 +54,11 @@ func (p *PostgresUserRepository) GetById(ctx context.Context, db repository.Quer
 	return &result, nil
 }
 
-func (p *PostgresUserRepository) GetByTeamName(ctx context.Context, db repository.Querier, teamName string) ([]entity.User, error) {
+func (p *PostgresUserRepository) GetByTeamName(
+	ctx context.Context,
+	db repository.Querier,
+	teamName string,
+) ([]entity.User, error) {
 	query := `
         SELECT id, username, team_name, is_active
         FROM users
@@ -74,7 +82,13 @@ func (p *PostgresUserRepository) GetByTeamName(ctx context.Context, db repositor
 			&user.TeamName,
 			&user.IsActive)
 		if err != nil {
-			p.logger.Debug("failed to GetByTeamName: scan error", "teamName", teamName, "error", err)
+			p.logger.Debug(
+				"failed to GetByTeamName: scan error",
+				"teamName",
+				teamName,
+				"error",
+				err,
+			)
 			return nil, errs.ErrInternal("failed to GetByTeamName: scan error", err)
 		}
 		result = append(result, user)
@@ -82,7 +96,11 @@ func (p *PostgresUserRepository) GetByTeamName(ctx context.Context, db repositor
 	return result, nil
 }
 
-func (p *PostgresUserRepository) GetActiveByTeamName(ctx context.Context, db repository.Querier, teamName string) ([]entity.User, error) {
+func (p *PostgresUserRepository) GetActiveByTeamName(
+	ctx context.Context,
+	db repository.Querier,
+	teamName string,
+) ([]entity.User, error) {
 	query := `
         SELECT id, username, team_name, is_active
         FROM users
@@ -106,7 +124,13 @@ func (p *PostgresUserRepository) GetActiveByTeamName(ctx context.Context, db rep
 			&user.TeamName,
 			&user.IsActive)
 		if err != nil {
-			p.logger.Debug("failed to GetActiveByTeamName: scan error", "teamName", teamName, "error", err)
+			p.logger.Debug(
+				"failed to GetActiveByTeamName: scan error",
+				"teamName",
+				teamName,
+				"error",
+				err,
+			)
 			return nil, errs.ErrInternal("failed to GetActiveByTeamName: scan error", err)
 		}
 		result = append(result, user)
@@ -114,7 +138,11 @@ func (p *PostgresUserRepository) GetActiveByTeamName(ctx context.Context, db rep
 	return result, nil
 }
 
-func (p *PostgresUserRepository) GetReviewersByPrId(ctx context.Context, db repository.Querier, prId string) ([]entity.User, error) {
+func (p *PostgresUserRepository) GetReviewersByPrId(
+	ctx context.Context,
+	db repository.Querier,
+	prId string,
+) ([]entity.User, error) {
 	query := `
 		SELECT id, username, team_name, is_active
 		FROM users u
@@ -146,7 +174,11 @@ func (p *PostgresUserRepository) GetReviewersByPrId(ctx context.Context, db repo
 	return result, nil
 }
 
-func (p *PostgresUserRepository) AddUsers(ctx context.Context, db repository.Querier, new []entity.User) error {
+func (p *PostgresUserRepository) AddUsers(
+	ctx context.Context,
+	db repository.Querier,
+	new []entity.User,
+) error {
 	query := `
 		INSERT INTO users (id, username, team_name, is_active)
 		VALUES 
@@ -171,7 +203,15 @@ func (p *PostgresUserRepository) AddUsers(ctx context.Context, db repository.Que
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
 			if pgErr.Code == "23505" {
-				p.logger.Debug("failed to AddUsers: some of users already exists", "query", query, "args", args, "error", err)
+				p.logger.Debug(
+					"failed to AddUsers: some of users already exists",
+					"query",
+					query,
+					"args",
+					args,
+					"error",
+					err,
+				)
 				return errs.ErrUserAlreadyExists
 			}
 		}
@@ -181,7 +221,12 @@ func (p *PostgresUserRepository) AddUsers(ctx context.Context, db repository.Que
 	return nil
 }
 
-func (p *PostgresUserRepository) UpdateUser(ctx context.Context, db repository.Querier, userId string, update *entity.UserUpdate) error {
+func (p *PostgresUserRepository) UpdateUser(
+	ctx context.Context,
+	db repository.Querier,
+	userId string,
+	update *entity.UserUpdate,
+) error {
 	if update.Username == nil && update.TeamName == nil && update.IsActive == nil {
 		return errs.ErrBadFilter("Username or TeamName or IsActive is required")
 	}
@@ -209,7 +254,12 @@ func (p *PostgresUserRepository) UpdateUser(ctx context.Context, db repository.Q
 		args = append(args, *update.IsActive)
 		currUpdate++
 	}
-	query = fmt.Sprintf("%s %s %s", query, strings.Join(values, ", "), fmt.Sprintf("WHERE id = $%d", currUpdate))
+	query = fmt.Sprintf(
+		"%s %s %s",
+		query,
+		strings.Join(values, ", "),
+		fmt.Sprintf("WHERE id = $%d", currUpdate),
+	)
 	args = append(args, userId)
 
 	ct, err := db.Exec(ctx, query, args...)

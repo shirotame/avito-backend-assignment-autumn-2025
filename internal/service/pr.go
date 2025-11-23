@@ -35,7 +35,10 @@ func NewPullRequestService(
 	}
 }
 
-func (s *PullRequestService) CreatePullRequest(ctx context.Context, dto entity.PullRequestCreateDTO) (*entity.PullRequestResponseDTO, error) {
+func (s *PullRequestService) CreatePullRequest(
+	ctx context.Context,
+	dto entity.PullRequestCreateDTO,
+) (*entity.PullRequestResponseDTO, error) {
 	exists, err := s.prRepo.GetPullRequestById(ctx, s.pool, dto.PullRequestId)
 	if err != nil && !errors.Is(err, errs.ErrBaseNotFound) {
 		return nil, err
@@ -101,7 +104,10 @@ func (s *PullRequestService) CreatePullRequest(ctx context.Context, dto entity.P
 	}, nil
 }
 
-func (s *PullRequestService) MergePullRequest(ctx context.Context, dto entity.MergePullRequestDTO) (*entity.PullRequestResponseDTO, error) {
+func (s *PullRequestService) MergePullRequest(
+	ctx context.Context,
+	dto entity.MergePullRequestDTO,
+) (*entity.PullRequestResponseDTO, error) {
 	exists, err := s.prRepo.GetPullRequestById(ctx, s.pool, dto.PullRequestId)
 	if err != nil {
 		return nil, err
@@ -149,7 +155,10 @@ func (s *PullRequestService) MergePullRequest(ctx context.Context, dto entity.Me
 	}, err
 }
 
-func (s *PullRequestService) ReassignPullRequest(ctx context.Context, dto entity.ReassignPullRequestDTO) (*entity.PullRequestResponseDTO, error) {
+func (s *PullRequestService) ReassignPullRequest(
+	ctx context.Context,
+	dto entity.ReassignPullRequestDTO,
+) (*entity.PullRequestResponseDTO, error) {
 	exists, err := s.prRepo.GetPullRequestById(ctx, s.pool, dto.PullRequestId)
 	if err != nil {
 		return nil, err

@@ -33,14 +33,21 @@ func NewTeamService(
 	}
 }
 
-func (s *TeamService) AddTeam(ctx context.Context, dto entity.TeamDTO) (*entity.ResponseTeamDTO, error) {
+func (s *TeamService) AddTeam(
+	ctx context.Context,
+	dto entity.TeamDTO,
+) (*entity.ResponseTeamDTO, error) {
 	exists, err := s.teamRepo.GetTeam(ctx, s.pool, dto.TeamName)
 	if err != nil && !errors.Is(err, errs.ErrBaseNotFound) {
 		s.logger.Debug("failed to AddTeam: error in GetTeam", "dto", dto, "err", err)
 		return nil, err
 	}
 	if exists != nil {
-		s.logger.Debug("failed GetTeam: team with this name already exists", "dto.teamName", dto.TeamName)
+		s.logger.Debug(
+			"failed GetTeam: team with this name already exists",
+			"dto.teamName",
+			dto.TeamName,
+		)
 		return nil, errs.ErrTeamAlreadyExists
 	}
 
@@ -92,7 +99,13 @@ func (s *TeamService) GetTeam(ctx context.Context, teamName string) (*entity.Tea
 
 	users, err := s.userRepo.GetByTeamName(ctx, s.pool, teamName)
 	if err != nil {
-		s.logger.Debug("failed to GetTeam: error in GetByTeamName", "teamName", teamName, "err", err)
+		s.logger.Debug(
+			"failed to GetTeam: error in GetByTeamName",
+			"teamName",
+			teamName,
+			"err",
+			err,
+		)
 		return nil, err
 	}
 	usersDTO := make([]entity.UserDTO, len(users))

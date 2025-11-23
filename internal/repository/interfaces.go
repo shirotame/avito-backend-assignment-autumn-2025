@@ -29,12 +29,21 @@ type BaseTeamRepository interface {
 }
 
 type BasePullRequestRepository interface {
-	GetPullRequestsByReviewerId(ctx context.Context, db Querier, reviewerId string) ([]entity.PullRequest, error)
+	GetPullRequestsByReviewerId(
+		ctx context.Context,
+		db Querier,
+		reviewerId string,
+	) ([]entity.PullRequest, error)
 	GetPullRequestById(ctx context.Context, db Querier, prId string) (*entity.PullRequest, error)
 
 	AddPullRequest(ctx context.Context, db Querier, ent *entity.PullRequest) error
 	UpdatePullRequestStatus(ctx context.Context, db Querier, prId string, newStatus string) error
 
 	AddReviewerToPullRequest(ctx context.Context, db Querier, prId string, reviewerId string) error
-	RemoveReviewerFromPullRequest(ctx context.Context, db Querier, prId string, reviewerId string) error
+	RemoveReviewerFromPullRequest(
+		ctx context.Context,
+		db Querier,
+		prId string,
+		reviewerId string,
+	) error
 }

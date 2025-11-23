@@ -31,7 +31,10 @@ func NewUserService(
 	}
 }
 
-func (s *UserService) SetIsActive(ctx context.Context, dto entity.SetUserIsActiveDTO) (*entity.UserDTO, error) {
+func (s *UserService) SetIsActive(
+	ctx context.Context,
+	dto entity.SetUserIsActiveDTO,
+) (*entity.UserDTO, error) {
 	exists, err := s.userRepo.GetById(ctx, s.pool, dto.UserId)
 	if err != nil {
 		s.logger.Debug("failed to SetIsActive: GetById failed", "err", err)
@@ -53,7 +56,10 @@ func (s *UserService) SetIsActive(ctx context.Context, dto entity.SetUserIsActiv
 	}, nil
 }
 
-func (s *UserService) GetReview(ctx context.Context, userId string) (*entity.UserPullRequestsDTO, error) {
+func (s *UserService) GetReview(
+	ctx context.Context,
+	userId string,
+) (*entity.UserPullRequestsDTO, error) {
 	exists, err := s.userRepo.GetById(ctx, s.pool, userId)
 	if err != nil {
 		s.logger.Debug("failed to GetReview: GetById failed", "err", err)

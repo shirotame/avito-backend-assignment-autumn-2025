@@ -22,7 +22,11 @@ func NewPostgresTeamRepository(baseLogger *slog.Logger) repository.BaseTeamRepos
 	}
 }
 
-func (p *PostgresTeamRepository) GetTeam(ctx context.Context, db repository.Querier, teamName string) (*entity.Team, error) {
+func (p *PostgresTeamRepository) GetTeam(
+	ctx context.Context,
+	db repository.Querier,
+	teamName string,
+) (*entity.Team, error) {
 	query := `
 		SELECT name FROM teams
 		WHERE name = $1
@@ -42,7 +46,11 @@ func (p *PostgresTeamRepository) GetTeam(ctx context.Context, db repository.Quer
 	return &team, nil
 }
 
-func (p *PostgresTeamRepository) AddTeam(ctx context.Context, db repository.Querier, new *entity.Team) error {
+func (p *PostgresTeamRepository) AddTeam(
+	ctx context.Context,
+	db repository.Querier,
+	new *entity.Team,
+) error {
 	query := `
 		INSERT INTO teams
 		(name) VALUES ($1);

@@ -17,14 +17,20 @@ type PostgresPullRequestRepository struct {
 	logger *slog.Logger
 }
 
-func NewPostgresPullRequestRepository(baseLogger *slog.Logger) repository.BasePullRequestRepository {
+func NewPostgresPullRequestRepository(
+	baseLogger *slog.Logger,
+) repository.BasePullRequestRepository {
 	logger := baseLogger.With("module", "prrepo")
 	return &PostgresPullRequestRepository{
 		logger: logger,
 	}
 }
 
-func (p *PostgresPullRequestRepository) GetPullRequestsByReviewerId(ctx context.Context, db repository.Querier, reviewerId string) ([]entity.PullRequest, error) {
+func (p *PostgresPullRequestRepository) GetPullRequestsByReviewerId(
+	ctx context.Context,
+	db repository.Querier,
+	reviewerId string,
+) ([]entity.PullRequest, error) {
 	query := `
 		SELECT id, name, author_id, status, updated_at FROM pull_requests pr
 		JOIN pull_requests_users pr_u ON pr.id = pr_u.pr_id
@@ -34,7 +40,13 @@ func (p *PostgresPullRequestRepository) GetPullRequestsByReviewerId(ctx context.
 
 	rows, err := db.Query(ctx, query, reviewerId)
 	if err != nil {
-		p.logger.Debug("failed to GetPullRequestsByReviewerId", "reviewerId", reviewerId, "err", err)
+		p.logger.Debug(
+			"failed to GetPullRequestsByReviewerId",
+			"reviewerId",
+			reviewerId,
+			"err",
+			err,
+		)
 		return nil, errs.ErrInternal("failed to GetPullRequestsByReviewerId", err)
 	}
 	defer rows.Close()
@@ -49,7 +61,13 @@ func (p *PostgresPullRequestRepository) GetPullRequestsByReviewerId(ctx context.
 			&pr.UpdatedAt,
 		)
 		if err != nil {
-			p.logger.Debug("failed to GetPullRequestsByReviewerId: scan error", "reviewerId", reviewerId, "err", err)
+			p.logger.Debug(
+				"failed to GetPullRequestsByReviewerId: scan error",
+				"reviewerId",
+				reviewerId,
+				"err",
+				err,
+			)
 			return nil, errs.ErrInternal("failed to GetPullRequestsByReviewerId: scan error", err)
 		}
 		prs = append(prs, pr)
@@ -57,7 +75,11 @@ func (p *PostgresPullRequestRepository) GetPullRequestsByReviewerId(ctx context.
 	return prs, nil
 }
 
-func (p *PostgresPullRequestRepository) GetPullRequestById(ctx context.Context, db repository.Querier, prId string) (*entity.PullRequest, error) {
+func (p *PostgresPullRequestRepository) GetPullRequestById(
+	ctx context.Context,
+	db repository.Querier,
+	prId string,
+) (*entity.PullRequest, error) {
 	query := `
 		SELECT id, name, author_id, status, updated_at FROM pull_requests 
         WHERE id = $1
@@ -81,7 +103,11 @@ func (p *PostgresPullRequestRepository) GetPullRequestById(ctx context.Context, 
 	return &pr, nil
 }
 
-func (p *PostgresPullRequestRepository) AddPullRequest(ctx context.Context, db repository.Querier, ent *entity.PullRequest) error {
+func (p *PostgresPullRequestRepository) AddPullRequest(
+	ctx context.Context,
+	db repository.Querier,
+	ent *entity.PullRequest,
+) error {
 	query := `
 		INSERT INTO pull_requests (id, name, author_id, status)
 		VALUES ($1, $2, $3, $4)
@@ -94,7 +120,12 @@ func (p *PostgresPullRequestRepository) AddPullRequest(ctx context.Context, db r
 	return nil
 }
 
-func (p *PostgresPullRequestRepository) UpdatePullRequestStatus(ctx context.Context, db repository.Querier, prId string, newStatus string) error {
+func (p *PostgresPullRequestRepository) UpdatePullRequestStatus(
+	ctx context.Context,
+	db repository.Querier,
+	prId string,
+	newStatus string,
+) error {
 	query := `
 		UPDATE pull_requests
 		SET status = $1, updated_at = $2
@@ -103,42 +134,92 @@ func (p *PostgresPullRequestRepository) UpdatePullRequestStatus(ctx context.Cont
 
 	ct, err := db.Exec(ctx, query, newStatus, time.Now(), prId)
 	if err != nil {
-		p.logger.Debug("failed to UpdatePullRequestStatus", "prId", prId, "newStatus", newStatus, "err", err)
+		p.logger.Debug(
+			"failed to UpdatePullRequestStatus",
+			"prId",
+			prId,
+			"newStatus",
+			newStatus,
+			"err",
+			err,
+		)
 		return errs.ErrInternal("failed to UpdatePullRequestStatus", err)
 	}
 	if ct.RowsAffected() == 0 {
-		p.logger.Debug("failed to UpdatePullRequestStatus: not found", "prId", prId, "newStatus", newStatus)
+		p.logger.Debug(
+			"failed to UpdatePullRequestStatus: not found",
+			"prId",
+			prId,
+			"newStatus",
+			newStatus,
+		)
 		return errs.ErrNotFound("pull request", "id", prId)
 	}
 	return nil
 }
 
-func (p *PostgresPullRequestRepository) AddReviewerToPullRequest(ctx context.Context, db repository.Querier, prId string, reviewerId string) error {
+func (p *PostgresPullRequestRepository) AddReviewerToPullRequest(
+	ctx context.Context,
+	db repository.Querier,
+	prId string,
+	reviewerId string,
+) error {
 	query := `
 		INSERT INTO pull_requests_users (user_id, pr_id)
 		VALUES ($1, $2)
 	`
 	_, err := db.Exec(ctx, query, reviewerId, prId)
 	if err != nil {
-		p.logger.Debug("failed to AddReviewerToPullRequest", "prId", prId, "reviewerId", reviewerId, "err", err)
+		p.logger.Debug(
+			"failed to AddReviewerToPullRequest",
+			"prId",
+			prId,
+			"reviewerId",
+			reviewerId,
+			"err",
+			err,
+		)
 		return errs.ErrInternal("failed to AddReviewerToPullRequest", err)
 	}
 	return nil
 }
 
-func (p *PostgresPullRequestRepository) RemoveReviewerFromPullRequest(ctx context.Context, db repository.Querier, prId string, reviewerId string) error {
+func (p *PostgresPullRequestRepository) RemoveReviewerFromPullRequest(
+	ctx context.Context,
+	db repository.Querier,
+	prId string,
+	reviewerId string,
+) error {
 	query := `
 		DELETE FROM pull_requests_users 
 		WHERE user_id = $1 AND pr_id = $2
 	`
 	ct, err := db.Exec(ctx, query, reviewerId, prId)
 	if err != nil {
-		p.logger.Debug("failed to RemoveReviewerFromPullRequest", "prId", prId, "reviewerId", reviewerId, "err", err)
+		p.logger.Debug(
+			"failed to RemoveReviewerFromPullRequest",
+			"prId",
+			prId,
+			"reviewerId",
+			reviewerId,
+			"err",
+			err,
+		)
 		return errs.ErrInternal("failed to RemoveReviewerFromPullRequest", err)
 	}
 	if ct.RowsAffected() == 0 {
-		p.logger.Debug("failed to RemoveReviewerFromPullRequest: not found", "prId", prId, "reviewerId", reviewerId)
-		return errs.ErrNotFound("pull request", "reviewerId and prId", fmt.Sprintf("%s, %s", reviewerId, prId))
+		p.logger.Debug(
+			"failed to RemoveReviewerFromPullRequest: not found",
+			"prId",
+			prId,
+			"reviewerId",
+			reviewerId,
+		)
+		return errs.ErrNotFound(
+			"pull request",
+			"reviewerId and prId",
+			fmt.Sprintf("%s, %s", reviewerId, prId),
+		)
 	}
 	return nil
 }

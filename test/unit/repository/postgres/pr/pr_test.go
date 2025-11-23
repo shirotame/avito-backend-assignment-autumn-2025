@@ -86,7 +86,13 @@ func createTeam(ctx context.Context, db repository.Querier, teamName string) err
 	return nil
 }
 
-func createUser(ctx context.Context, db repository.Querier, userId string, userName string, teamName string) error {
+func createUser(
+	ctx context.Context,
+	db repository.Querier,
+	userId string,
+	userName string,
+	teamName string,
+) error {
 	query := `
 		INSERT INTO users (id, username, team_name, is_active) 
 		VALUES ($1, $2, $3, $4)
@@ -211,11 +217,10 @@ func TestGetPullRequestById(t *testing.T) {
 		}
 
 		err = repo.AddPullRequest(ctx, tx, &entity.PullRequest{
-			"pr1",
-			"pr1",
-			"u1",
-			entity.StatusOpen,
-			nil,
+			Id:              "pr1",
+			PullRequestName: "pr1",
+			AuthorId:        "u1",
+			Status:          entity.StatusOpen,
 		})
 		if err != nil {
 			t.Fatalf("AddPullRequest expected to succeed, got: %v", err)
@@ -246,11 +251,10 @@ func TestAddPullRequest(t *testing.T) {
 		}
 
 		ent := &entity.PullRequest{
-			"pr1",
-			"pr1",
-			"u1",
-			entity.StatusOpen,
-			nil,
+			Id:              "pr1",
+			PullRequestName: "pr1",
+			AuthorId:        "u1",
+			Status:          entity.StatusOpen,
 		}
 		err = repo.AddPullRequest(ctx, tx, ent)
 		if err != nil {
@@ -275,11 +279,10 @@ func TestAddPullRequest(t *testing.T) {
 		}
 
 		ent := &entity.PullRequest{
-			"pr1",
-			"pr1",
-			"u1",
-			entity.StatusOpen,
-			nil,
+			Id:              "pr1",
+			PullRequestName: "pr1",
+			AuthorId:        "u1",
+			Status:          entity.StatusOpen,
 		}
 		err = repo.AddPullRequest(ctx, tx, ent)
 		if err != nil {
@@ -296,7 +299,10 @@ func TestUpdatePullRequestStatus(t *testing.T) {
 		err := repo.UpdatePullRequestStatus(ctx, tx, "pr1", entity.StatusMerged)
 		if err != nil {
 			if !errors.Is(err, errs.ErrBaseNotFound) {
-				t.Fatalf("UpdatePullRequestStatus expected to fail with ErrBaseNotFound, got: %v", err)
+				t.Fatalf(
+					"UpdatePullRequestStatus expected to fail with ErrBaseNotFound, got: %v",
+					err,
+				)
 			}
 		}
 	})
@@ -528,7 +534,10 @@ func TestRemoveReviewerFromPullRequest(t *testing.T) {
 		err = repo.RemoveReviewerFromPullRequest(ctx, tx, "pr1", "u1")
 		if err != nil {
 			if !errors.Is(err, errs.ErrBaseNotFound) {
-				t.Fatalf("AddReviewerToPullRequest expected to fail with ErrBaseNotFound, got: %v", err)
+				t.Fatalf(
+					"AddReviewerToPullRequest expected to fail with ErrBaseNotFound, got: %v",
+					err,
+				)
 			}
 		}
 	})

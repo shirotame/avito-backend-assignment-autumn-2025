@@ -1,0 +1,22 @@
+version: "2"
+
+run:
+  timeout: 2m
+  relative-path-mode: gomod
+  tests: false
+
+linters:
+  enable:
+    - govet
+    - unused
+    - staticcheck
+    - goconst
+
+issues:
+  max-issues-per-linter: 30
+  max-same-issues: 3
+
+formatters:
+  enable:
+    - gofmt
+    - goimports

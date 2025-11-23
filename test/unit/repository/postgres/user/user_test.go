@@ -66,7 +66,13 @@ func createTeam(ctx context.Context, db repository.Querier, teamName string) err
 	return nil
 }
 
-func createPrAndAssign(ctx context.Context, db repository.Querier, prId string, authorId string, reviewerId string) error {
+func createPrAndAssign(
+	ctx context.Context,
+	db repository.Querier,
+	prId string,
+	authorId string,
+	reviewerId string,
+) error {
 	query := `
 		INSERT INTO pull_requests (id, name, author_id, status)
 		VALUES ($1, $2, $3, $4)
@@ -111,10 +117,9 @@ func TestAddUsers(t *testing.T) {
 
 		users := make([]entity.User, 1)
 		users[0] = entity.User{
-			"u1",
-			"test",
-			"team",
-			false,
+			Id:       "u1",
+			Username: "test",
+			TeamName: "team",
 		}
 
 		err := repo.AddUsers(ctx, tx, users)
@@ -133,10 +138,9 @@ func TestAddUsers(t *testing.T) {
 
 		users := make([]entity.User, 1)
 		users[0] = entity.User{
-			"u1",
-			"test",
-			"team",
-			false,
+			Id:       "u1",
+			Username: "test",
+			TeamName: "team",
 		}
 
 		err = repo.AddUsers(ctx, tx, users)
@@ -156,10 +160,9 @@ func TestAddUsers(t *testing.T) {
 		users := make([]entity.User, 3)
 		for i := range users {
 			users[i] = entity.User{
-				fmt.Sprintf("u%d", i),
-				fmt.Sprintf("user%d", i),
-				"team",
-				false,
+				Id:       fmt.Sprintf("u%d", i),
+				Username: fmt.Sprintf("user%d", i),
+				TeamName: "team",
 			}
 		}
 
@@ -239,10 +242,9 @@ func TestGetReviewersByPrId(t *testing.T) {
 		users := make([]entity.User, 3)
 		for i := range users {
 			users[i] = entity.User{
-				fmt.Sprintf("u%d", i),
-				fmt.Sprintf("user%d", i),
-				"team",
-				false,
+				Id:       fmt.Sprintf("u%d", i),
+				Username: fmt.Sprintf("user%d", i),
+				TeamName: "team",
 			}
 		}
 		err = repo.AddUsers(ctx, tx, users)

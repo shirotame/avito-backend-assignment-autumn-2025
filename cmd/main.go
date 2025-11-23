@@ -30,7 +30,7 @@ func main() {
 
 	wd, err := os.Getwd()
 	if err != nil {
-		rootLogger.Error("failed to Getwd", err)
+		rootLogger.Error("failed to Getwd", "err", err)
 	}
 	err = godotenv.Load(filepath.Join(wd, ".env"), filepath.Join(wd, "local.env"))
 	if err != nil {
@@ -71,8 +71,14 @@ func main() {
 	router := chi.NewRouter()
 
 	// Swagger
-	router.Handle("/swagger/*", http.StripPrefix("/swagger/", http.FileServer(http.FS(web.StaticFiles))))
-	router.Handle("/swagger/openapi.yml", http.StripPrefix("/swagger/", http.FileServer(http.FS(api.SpecFile))))
+	router.Handle(
+		"/swagger/*",
+		http.StripPrefix("/swagger/", http.FileServer(http.FS(web.StaticFiles))),
+	)
+	router.Handle(
+		"/swagger/openapi.yml",
+		http.StripPrefix("/swagger/", http.FileServer(http.FS(api.SpecFile))),
+	)
 
 	// Routes
 	router.Route("/team", func(r chi.Router) {

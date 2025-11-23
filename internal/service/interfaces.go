@@ -16,7 +16,16 @@ type BaseTeamService interface {
 }
 
 type BasePullRequestService interface {
-	CreatePullRequest(ctx context.Context, dto entity.PullRequestCreateDTO) (*entity.PullRequestResponseDTO, error)
-	MergePullRequest(ctx context.Context, dto entity.MergePullRequestDTO) (*entity.PullRequestResponseDTO, error)
-	ReassignPullRequest(ctx context.Context, dto entity.ReassignPullRequestDTO) (*entity.PullRequestResponseDTO, error)
+	CreatePullRequest(
+		ctx context.Context,
+		dto entity.PullRequestCreateDTO,
+	) (*entity.PullRequestResponseDTO, error)
+	MergePullRequest(
+		ctx context.Context,
+		dto entity.MergePullRequestDTO,
+	) (*entity.PullRequestResponseDTO, error)
+	ReassignPullRequest(
+		ctx context.Context,
+		dto entity.ReassignPullRequestDTO,
+	) (*entity.PullRequestResponseDTO, error)
 }
