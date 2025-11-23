@@ -6,12 +6,12 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: prservice
+      POSTGRES_DB: main
 
   migrator:
     image: migrate/migrate
     command:
-      ["-path", "/migrations", "-database", "postgresql://postgres:postgres@db:5432/prservice?sslmode=disable", "up"]
+      ["-path", "/migrations", "-database", "postgresql://postgres:postgres@db:5432/main?sslmode=disable", "up"]
     volumes:
       - ./migrations:/migrations
     depends_on:
@@ -25,7 +25,7 @@ services:
       context: .
       dockerfile: Dockerfile
     environment:
-      DATABASE_URL: "postgresql://postgres:postgres@db:5432/prservice?sslmode=disable"
+      DATABASE_URL: "postgresql://postgres:postgres@db:5432/main?sslmode=disable"
     ports:
       - "8080:8080"
     depends_on:
