@@ -3,14 +3,15 @@ package team
 import (
 	"context"
 	"errors"
-	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/entity"
-	errs "github.com/shirotame/avito-backend-assignment-autumn-2025/internal/errors"
-	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/repository"
-	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/repository/postgres"
 	"log/slog"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/entity"
+	errs "github.com/shirotame/avito-backend-assignment-autumn-2025/internal/errors"
+	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/repository"
+	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/repository/postgres"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"

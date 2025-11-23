@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+
 	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/entity"
 
 	"github.com/jackc/pgx/v5"
@@ -35,6 +36,7 @@ type BasePullRequestRepository interface {
 		reviewerId string,
 	) ([]entity.PullRequest, error)
 	GetPullRequestById(ctx context.Context, db Querier, prId string) (*entity.PullRequest, error)
+	GetOpenPullRequestsByReviewers(ctx context.Context, db Querier) ([]entity.UserStats, error)
 
 	AddPullRequest(ctx context.Context, db Querier, ent *entity.PullRequest) error
 	UpdatePullRequestStatus(ctx context.Context, db Querier, prId string, newStatus string) error

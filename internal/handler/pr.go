@@ -1,10 +1,11 @@
 package handler
 
 import (
-	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/entity"
-	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/service"
 	"log/slog"
 	"net/http"
+
+	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/entity"
+	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/service"
 )
 
 type PullRequestHandler struct {
@@ -21,6 +22,18 @@ func NewPullRequestHandler(
 		logger: logger,
 		srv:    srv,
 	}
+}
+
+func (h *PullRequestHandler) GetOpenPullRequestsByReviewers(w http.ResponseWriter, r *http.Request) {
+	h.logger.Info("GetOpenPullRequestsByReviewers", "ip", r.RemoteAddr, "user-agent", r.UserAgent())
+
+	res, err := h.srv.GetOpenPullRequestsByReviewers(r.Context())
+	if err != nil {
+		h.logger.Debug("GetOpenPullRequestsByReviewers failed", "err", err)
+		WriteError(w, err)
+	}
+
+	WriteJsonDTO(w, http.StatusOK, res)
 }
 
 func (h *PullRequestHandler) CreatePullRequest(w http.ResponseWriter, r *http.Request) {

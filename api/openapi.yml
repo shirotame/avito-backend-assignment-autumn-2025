@@ -81,6 +81,16 @@ components:
           type: string
         is_active:
           type: boolean
+    UserStats:
+      type: object
+      required: [user_id, username, open_pull_requests]
+      properties:
+        user_id:
+          type: string
+        username:
+          type: string
+        open_pull_requests:
+          type: integer
     PullRequest:
       type: object
       required: [ pull_request_id, pull_request_name, author_id, status, assigned_reviewers]
@@ -239,6 +249,25 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /pullRequest/openByReviewers:
+    get:
+      tags: [PullRequests]
+      summary: "Получить статистику: открытые PR по ревьюверам"
+      responses:
+        '200':
+          description: "Статистика"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserStats'
+                example:
+                  - user_id: u3
+                    username: Ivan
+                    open_pull_requests: 5
+
 
   /pullRequest/create:
     post:

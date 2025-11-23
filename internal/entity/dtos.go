@@ -58,3 +58,9 @@ type PullRequestResponseDTO struct {
 	PullRequest PullRequestDTO `json:"pr"`
 	ReplacedBy  *string        `json:"replaced_by,omitempty"`
 }
+
+type UserStatsDTO struct {
+	UserId           string `json:"user_id"`
+	Username         string `json:"username"`
+	OpenPullRequests int    `json:"open_pull_requests"`
+}
