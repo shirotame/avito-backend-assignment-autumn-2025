@@ -1,5 +1,7 @@
 package entity
 
+import "time"
+
 const (
 	StatusOpen   = "OPEN"
 	StatusMerged = "MERGED"
@@ -26,4 +28,5 @@ type PullRequest struct {
 	PullRequestName string
 	AuthorId        string
 	Status          string
+	UpdatedAt       *time.Time
 }

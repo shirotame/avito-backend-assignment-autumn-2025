@@ -18,6 +18,7 @@ type BaseUserRepository interface {
 	GetById(ctx context.Context, db Querier, id string) (*entity.User, error)
 	GetByTeamName(ctx context.Context, db Querier, teamName string) ([]entity.User, error)
 	GetActiveByTeamName(ctx context.Context, db Querier, teamName string) ([]entity.User, error)
+	GetReviewersByPrId(ctx context.Context, db Querier, prId string) ([]entity.User, error)
 	AddUsers(ctx context.Context, db Querier, new []entity.User) error
 	UpdateUser(ctx context.Context, db Querier, userId string, update *entity.UserUpdate) error
 }

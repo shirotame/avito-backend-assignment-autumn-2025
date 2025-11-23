@@ -27,8 +27,7 @@ var (
 func TestMain(m *testing.M) {
 	err := godotenv.Load("..\\test.env")
 	if err != nil {
-		slog.Error("Unable to load env", "err", err)
-		os.Exit(1)
+		slog.Error("unable to load env, using default environment variables", "err", err)
 	}
 	logHandler := slog.NewTextHandler(
 		os.Stdout,
@@ -216,6 +215,7 @@ func TestGetPullRequestById(t *testing.T) {
 			"pr1",
 			"u1",
 			entity.StatusOpen,
+			nil,
 		})
 		if err != nil {
 			t.Fatalf("AddPullRequest expected to succeed, got: %v", err)
@@ -250,6 +250,7 @@ func TestAddPullRequest(t *testing.T) {
 			"pr1",
 			"u1",
 			entity.StatusOpen,
+			nil,
 		}
 		err = repo.AddPullRequest(ctx, tx, ent)
 		if err != nil {
@@ -278,6 +279,7 @@ func TestAddPullRequest(t *testing.T) {
 			"pr1",
 			"u1",
 			entity.StatusOpen,
+			nil,
 		}
 		err = repo.AddPullRequest(ctx, tx, ent)
 		if err != nil {
@@ -346,10 +348,10 @@ func TestAddReviewerToPullRequest(t *testing.T) {
 		}
 
 		err = repo.AddPullRequest(ctx, tx, &entity.PullRequest{
-			"pr1",
-			"pr1",
-			"u1",
-			entity.StatusOpen,
+			Id:              "pr1",
+			PullRequestName: "pr1",
+			AuthorId:        "u1",
+			Status:          entity.StatusOpen,
 		})
 		if err != nil {
 			t.Fatalf("AddPullRequest expected to succeed, got: %v", err)
@@ -378,10 +380,10 @@ func TestAddReviewerToPullRequest(t *testing.T) {
 		}
 
 		err = repo.AddPullRequest(ctx, tx, &entity.PullRequest{
-			"pr1",
-			"pr1",
-			"u1",
-			entity.StatusOpen,
+			Id:              "pr1",
+			PullRequestName: "pr1",
+			AuthorId:        "u1",
+			Status:          entity.StatusOpen,
 		})
 		if err != nil {
 			t.Fatalf("AddPullRequest expected to succeed, got: %v", err)
@@ -410,10 +412,10 @@ func TestAddReviewerToPullRequest(t *testing.T) {
 		}
 
 		err = repo.AddPullRequest(ctx, tx, &entity.PullRequest{
-			"pr1",
-			"pr1",
-			"u1",
-			entity.StatusOpen,
+			Id:              "pr1",
+			PullRequestName: "pr1",
+			AuthorId:        "u1",
+			Status:          entity.StatusOpen,
 		})
 		if err != nil {
 			t.Fatalf("AddPullRequest expected to succeed, got: %v", err)
@@ -445,10 +447,10 @@ func TestRemoveReviewerFromPullRequest(t *testing.T) {
 		}
 
 		err = repo.AddPullRequest(ctx, tx, &entity.PullRequest{
-			"pr1",
-			"pr1",
-			"u1",
-			entity.StatusOpen,
+			Id:              "pr1",
+			PullRequestName: "pr1",
+			AuthorId:        "u1",
+			Status:          entity.StatusOpen,
 		})
 		if err != nil {
 			t.Fatalf("AddPullRequest expected to succeed, got: %v", err)
@@ -477,10 +479,10 @@ func TestRemoveReviewerFromPullRequest(t *testing.T) {
 		}
 
 		err = repo.AddPullRequest(ctx, tx, &entity.PullRequest{
-			"pr1",
-			"pr1",
-			"u1",
-			entity.StatusOpen,
+			Id:              "pr1",
+			PullRequestName: "pr1",
+			AuthorId:        "u1",
+			Status:          entity.StatusOpen,
 		})
 		if err != nil {
 			t.Fatalf("AddPullRequest expected to succeed, got: %v", err)
@@ -509,10 +511,10 @@ func TestRemoveReviewerFromPullRequest(t *testing.T) {
 		}
 
 		err = repo.AddPullRequest(ctx, tx, &entity.PullRequest{
-			"pr1",
-			"pr1",
-			"u1",
-			entity.StatusOpen,
+			Id:              "pr1",
+			PullRequestName: "pr1",
+			AuthorId:        "u1",
+			Status:          entity.StatusOpen,
 		})
 		if err != nil {
 			t.Fatalf("AddPullRequest expected to succeed, got: %v", err)
@@ -548,10 +550,10 @@ func TestRemoveReviewerFromPullRequest(t *testing.T) {
 		}
 
 		err = repo.AddPullRequest(ctx, tx, &entity.PullRequest{
-			"pr1",
-			"pr1",
-			"u1",
-			entity.StatusOpen,
+			Id:              "pr1",
+			PullRequestName: "pr1",
+			AuthorId:        "u1",
+			Status:          entity.StatusOpen,
 		})
 		if err != nil {
 			t.Fatalf("AddPullRequest expected to succeed, got: %v", err)

@@ -28,8 +28,7 @@ var (
 func TestMain(m *testing.M) {
 	err := godotenv.Load("..\\test.env")
 	if err != nil {
-		slog.Error("Unable to load env", "err", err)
-		os.Exit(1)
+		slog.Error("unable to load env, using default environment variables")
 	}
 	logHandler := slog.NewTextHandler(
 		os.Stdout,
@@ -61,6 +60,27 @@ func TestMain(m *testing.M) {
 
 func createTeam(ctx context.Context, db repository.Querier, teamName string) error {
 	_, err := db.Exec(ctx, "INSERT INTO teams(name) VALUES ($1)", teamName)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func createPrAndAssign(ctx context.Context, db repository.Querier, prId string, authorId string, reviewerId string) error {
+	query := `
+		INSERT INTO pull_requests (id, name, author_id, status)
+		VALUES ($1, $2, $3, $4)
+	`
+	_, err := db.Exec(ctx, query, prId, prId, authorId, entity.StatusOpen)
+	if err != nil {
+		return err
+	}
+
+	query = `
+		INSERT INTO pull_requests_users (user_id, pr_id)
+		VALUES ($1, $2)
+	`
+	_, err = db.Exec(ctx, query, reviewerId, prId)
 	if err != nil {
 		return err
 	}
@@ -191,6 +211,56 @@ func TestGetById(t *testing.T) {
 		}
 		if res.Id != "u1" {
 			t.Errorf("GetById expected id = u1, got: %v", res.Id)
+		}
+	})
+}
+
+func TestGetReviewersByPrId(t *testing.T) {
+	t.Run("No reviewers", func(t *testing.T) {
+		ctx, cancel, tx := setupTest(t)
+		defer cancel()
+
+		res, err := repo.GetReviewersByPrId(ctx, tx, "pr1")
+		if err != nil {
+			t.Errorf("GetReviewersByPrId expected to succeed, got: %v", err)
+		}
+		if len(res) != 0 {
+			t.Errorf("GetReviewersByPrId expected to return a 0 users, got %v", len(res))
+		}
+	})
+	t.Run("With reviewers", func(t *testing.T) {
+		ctx, cancel, tx := setupTest(t)
+		defer cancel()
+
+		err := createTeam(ctx, tx, "team")
+		if err != nil {
+			t.Errorf("CreateTeam expected to succeed, got: %v", err)
+		}
+		users := make([]entity.User, 3)
+		for i := range users {
+			users[i] = entity.User{
+				fmt.Sprintf("u%d", i),
+				fmt.Sprintf("user%d", i),
+				"team",
+				false,
+			}
+		}
+		err = repo.AddUsers(ctx, tx, users)
+		if err != nil {
+			t.Errorf("AddUsers expected to succeed, got: %v", err)
+		}
+
+		err = createPrAndAssign(ctx, tx, "pr1", "u1", "u2")
+		if err != nil {
+			t.Errorf("CreatePrAndAssign expected to succeed, got: %v", err)
+		}
+
+		res, err := repo.GetReviewersByPrId(ctx, tx, "pr1")
+		if err != nil {
+			t.Errorf("GetReviewersByPrId expected to succeed, got: %v", err)
+		}
+		if len(res) != 1 {
+			t.Errorf("GetReviewersByPrId expected to return a 1 users, got %v", len(res))
 		}
 	})
 }

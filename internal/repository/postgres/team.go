@@ -37,7 +37,7 @@ func (p *PostgresTeamRepository) GetTeam(ctx context.Context, db repository.Quer
 			return nil, errs.ErrNotFound("team", "name", teamName)
 		}
 		p.logger.Debug("failed to GetTeam", "teamName", teamName, "err", err)
-		return nil, err
+		return nil, errs.ErrInternal("failed to GetTeam", err)
 	}
 	return &team, nil
 }
@@ -51,7 +51,7 @@ func (p *PostgresTeamRepository) AddTeam(ctx context.Context, db repository.Quer
 	_, err := db.Exec(ctx, query, new.TeamName)
 	if err != nil {
 		p.logger.Debug("failed to AddTeam", "teamName", new.TeamName, "err", err)
-		return err
+		return errs.ErrInternal("failed to AddTeam", err)
 	}
 	return nil
 }

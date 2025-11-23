@@ -27,8 +27,7 @@ var (
 func TestMain(m *testing.M) {
 	err := godotenv.Load("..\\test.env")
 	if err != nil {
-		slog.Error("Unable to load env", "err", err)
-		os.Exit(1)
+		slog.Error("unable to load env, using default environment variables", "err", err)
 	}
 	logHandler := slog.NewTextHandler(
 		os.Stdout,

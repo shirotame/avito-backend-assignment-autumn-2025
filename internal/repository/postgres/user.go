@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type PostgresUserRepository struct {
@@ -44,7 +45,7 @@ func (p *PostgresUserRepository) GetById(ctx context.Context, db repository.Quer
 			return nil, errs.ErrNotFound("user", "id", id)
 		}
 		p.logger.Debug("failed to GetById", "id", id, "error", err)
-		return nil, err
+		return nil, errs.ErrInternal("failed to GetById", err)
 	}
 	return &result, nil
 }
@@ -60,7 +61,7 @@ func (p *PostgresUserRepository) GetByTeamName(ctx context.Context, db repositor
 	rows, err := db.Query(ctx, query, teamName)
 	if err != nil {
 		p.logger.Debug("failed to GetByTeamName", "teamName", teamName, "error", err)
-		return nil, err
+		return nil, errs.ErrInternal("failed to GetByTeamName", err)
 	}
 	defer rows.Close()
 
@@ -73,8 +74,8 @@ func (p *PostgresUserRepository) GetByTeamName(ctx context.Context, db repositor
 			&user.TeamName,
 			&user.IsActive)
 		if err != nil {
-			p.logger.Debug("failed to GetByTeamName", "teamName", teamName, "error", err)
-			return nil, err
+			p.logger.Debug("failed to GetByTeamName: scan error", "teamName", teamName, "error", err)
+			return nil, errs.ErrInternal("failed to GetByTeamName: scan error", err)
 		}
 		result = append(result, user)
 	}
@@ -92,7 +93,7 @@ func (p *PostgresUserRepository) GetActiveByTeamName(ctx context.Context, db rep
 	rows, err := db.Query(ctx, query, teamName)
 	if err != nil {
 		p.logger.Debug("failed to GetActiveByTeamName", "teamName", teamName, "error", err)
-		return nil, err
+		return nil, errs.ErrInternal("failed to GetActiveByTeamName", err)
 	}
 	defer rows.Close()
 
@@ -105,8 +106,40 @@ func (p *PostgresUserRepository) GetActiveByTeamName(ctx context.Context, db rep
 			&user.TeamName,
 			&user.IsActive)
 		if err != nil {
-			p.logger.Debug("failed to GetActiveByTeamName", "teamName", teamName, "error", err)
-			return nil, err
+			p.logger.Debug("failed to GetActiveByTeamName: scan error", "teamName", teamName, "error", err)
+			return nil, errs.ErrInternal("failed to GetActiveByTeamName: scan error", err)
+		}
+		result = append(result, user)
+	}
+	return result, nil
+}
+
+func (p *PostgresUserRepository) GetReviewersByPrId(ctx context.Context, db repository.Querier, prId string) ([]entity.User, error) {
+	query := `
+		SELECT id, username, team_name, is_active
+		FROM users u
+		JOIN pull_requests_users pr_u ON u.id = pr_u.user_id
+		WHERE pr_u.pr_id = $1
+	`
+	var result []entity.User
+	rows, err := db.Query(ctx, query, prId)
+	if err != nil {
+		p.logger.Debug("failed to GetReviewersByPrId", "prId", prId, "error", err)
+		return nil, errs.ErrInternal("failed to GetReviewersByPrId", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var user entity.User
+		err := rows.Scan(
+			&user.Id,
+			&user.Username,
+			&user.TeamName,
+			&user.IsActive,
+		)
+		if err != nil {
+			p.logger.Debug("failed to GetReviewersByPrId", "prId", prId, "error", err)
+			return nil, errs.ErrInternal("failed to GetReviewersByPrId", err)
 		}
 		result = append(result, user)
 	}
@@ -133,13 +166,17 @@ func (p *PostgresUserRepository) AddUsers(ctx context.Context, db repository.Que
 		currIdx++
 	}
 	query = fmt.Sprintf("%s %s", query, strings.Join(values, ", "))
-	ct, err := db.Exec(ctx, query, args...)
+	_, err := db.Exec(ctx, query, args...)
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Code == "23505" {
+				p.logger.Debug("failed to AddUsers: some of users already exists", "query", query, "args", args, "error", err)
+				return errs.ErrUserAlreadyExists
+			}
+		}
 		p.logger.Debug("failed to AddUsers", "query", query, "args", args, "error", err)
-		return err
-	}
-	if ct.RowsAffected() != int64(len(new)) {
-		p.logger.Debug("failed to AddUsers: RowsAffected less than excepted", "RowsAffected", ct.RowsAffected(), "expected", int64(len(new)), "query", query, "args", args)
+		return errs.ErrInternal("failed to AddUsers", err)
 	}
 	return nil
 }
@@ -178,7 +215,7 @@ func (p *PostgresUserRepository) UpdateUser(ctx context.Context, db repository.Q
 	ct, err := db.Exec(ctx, query, args...)
 	if err != nil {
 		p.logger.Debug("failed to UpdateUser", "query", query, "args", args, "error", err)
-		return err
+		return errs.ErrInternal("failed to UpdateUser", err)
 	}
 	if ct.RowsAffected() == 0 {
 		p.logger.Debug("failed to UpdateUser: not found", "userId", userId)
