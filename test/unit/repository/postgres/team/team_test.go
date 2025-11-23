@@ -1,14 +1,18 @@
-package pgteam
+package team
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"os"
 	"prservice/internal/entity"
+	errs "prservice/internal/errors"
 	"prservice/internal/repository"
+	"prservice/internal/repository/postgres"
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 )
@@ -48,46 +52,41 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	repo = repository.NewPostgresTeamRepository(logger, pool)
-
-	err = cleanupTables()
-	if err != nil {
-		slog.Error("Unable to cleanup tables", "err", err)
-		os.Exit(1)
-	}
+	repo = postgres.NewPostgresTeamRepository(logger)
 
 	exitCode := m.Run()
 	os.Exit(exitCode)
 }
 
-func cleanupTables() error {
-	return repository.TruncateTables(globalCtx, pool, "teams")
-}
-
-func setupTest(t *testing.T) (context.Context, func()) {
+func setupTest(t *testing.T) (context.Context, func(), pgx.Tx) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		t.Fatalf("failed to start transaction: %v", err)
+	}
+
 	t.Cleanup(func() {
-		err := cleanupTables()
-		if err != nil {
-			t.Fatalf("error cleaning up tables: %v", err)
+		cancel()
+		if err := tx.Rollback(globalCtx); err != nil {
+			t.Fatalf("error rolling back: %v", err)
 		}
 	})
-	return ctx, cancel
+	return ctx, cancel, tx
 }
-
 func TestAddTeam(t *testing.T) {
 	t.Run("Already exists", func(t *testing.T) {
-		ctx, cancel := setupTest(t)
+		ctx, cancel, tx := setupTest(t)
 		defer cancel()
 
-		err := repo.AddTeam(ctx, &entity.Team{
+		err := repo.AddTeam(ctx, tx, &entity.Team{
 			TeamName: "test",
 		})
 		if err != nil {
 			t.Fatalf("AddTeam expected to succeed, got: %v", err)
 		}
 
-		err = repo.AddTeam(ctx, &entity.Team{
+		err = repo.AddTeam(ctx, tx, &entity.Team{
 			TeamName: "test",
 		})
 		if err == nil {
@@ -95,10 +94,10 @@ func TestAddTeam(t *testing.T) {
 		}
 	})
 	t.Run("All ok", func(t *testing.T) {
-		ctx, cancel := setupTest(t)
+		ctx, cancel, tx := setupTest(t)
 		defer cancel()
 
-		err := repo.AddTeam(ctx, &entity.Team{
+		err := repo.AddTeam(ctx, tx, &entity.Team{
 			TeamName: "test",
 		})
 		if err != nil {
@@ -109,26 +108,28 @@ func TestAddTeam(t *testing.T) {
 
 func TestGetTeam(t *testing.T) {
 	t.Run("Invalid name", func(t *testing.T) {
-		ctx, cancel := setupTest(t)
+		ctx, cancel, tx := setupTest(t)
 		defer cancel()
 
-		_, err := repo.GetTeam(ctx, "test")
-		if err == nil {
-			t.Fatal("GetTeam expected to fail")
+		_, err := repo.GetTeam(ctx, tx, "test")
+		if err != nil {
+			if !errors.Is(err, errs.ErrBaseNotFound) {
+				t.Fatalf("GetTeam expected to fail with ErrBaseNotFound, got: %v", err)
+			}
 		}
 	})
 	t.Run("All ok", func(t *testing.T) {
-		ctx, cancel := setupTest(t)
+		ctx, cancel, tx := setupTest(t)
 		defer cancel()
 
-		err := repo.AddTeam(ctx, &entity.Team{
+		err := repo.AddTeam(ctx, tx, &entity.Team{
 			TeamName: "test",
 		})
 		if err != nil {
 			t.Fatalf("AddTeam expected to succeed, got: %v", err)
 		}
 
-		team, err := repo.GetTeam(ctx, "test")
+		team, err := repo.GetTeam(ctx, tx, "test")
 		if err != nil {
 			t.Fatalf("GetTeam expected to succeed, got: %v", err)
 		}

@@ -5,9 +5,3 @@ type UserUpdate struct {
 	TeamName *string
 	IsActive *bool
 }
-
-type PullRequestUpdate struct {
-	PullRequestName *string
-	AuthorId        *string
-	Status          *string
-}

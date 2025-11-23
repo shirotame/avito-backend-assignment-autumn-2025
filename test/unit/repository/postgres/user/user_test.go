@@ -1,4 +1,4 @@
-package pguser
+package user
 
 import (
 	"context"
@@ -9,9 +9,11 @@ import (
 	"prservice/internal/entity"
 	errs "prservice/internal/errors"
 	"prservice/internal/repository"
+	"prservice/internal/repository/postgres"
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 )
@@ -51,48 +53,40 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	repo = repository.NewPostgresUserRepository(logger, pool)
-
-	err = cleanupTables()
-	if err != nil {
-		slog.Error("Unable to cleanup tables", "err", err)
-		os.Exit(1)
-	}
+	repo = postgres.NewPostgresUserRepository(logger)
 
 	exitCode := m.Run()
 	os.Exit(exitCode)
 }
 
-func createTeam(ctx context.Context, teamName string) error {
-	_, err := pool.Exec(ctx, "INSERT INTO teams(name) VALUES ($1)", teamName)
+func createTeam(ctx context.Context, db repository.Querier, teamName string) error {
+	_, err := db.Exec(ctx, "INSERT INTO teams(name) VALUES ($1)", teamName)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func cleanupTables() error {
-	err := repository.TruncateTables(globalCtx, pool, "users")
-	if err != nil {
-		return err
-	}
-	return repository.TruncateTables(globalCtx, pool, "teams")
-}
-
-func setupTest(t *testing.T) (context.Context, func()) {
+func setupTest(t *testing.T) (context.Context, func(), pgx.Tx) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		t.Fatalf("failed to start transaction: %v", err)
+	}
+
 	t.Cleanup(func() {
-		err := cleanupTables()
-		if err != nil {
-			t.Fatalf("failed to cleanup tables: %v", err)
+		cancel()
+		if err := tx.Rollback(globalCtx); err != nil {
+			t.Fatalf("error rolling back: %v", err)
 		}
 	})
-	return ctx, cancel
+	return ctx, cancel, tx
 }
 
 func TestAddUsers(t *testing.T) {
 	t.Run("No teams", func(t *testing.T) {
-		ctx, cancel := setupTest(t)
+		ctx, cancel, tx := setupTest(t)
 		defer cancel()
 
 		users := make([]entity.User, 1)
@@ -103,16 +97,16 @@ func TestAddUsers(t *testing.T) {
 			false,
 		}
 
-		err := repo.AddUsers(ctx, users)
+		err := repo.AddUsers(ctx, tx, users)
 		if err == nil {
 			t.Error("AddUsers expected to fail")
 		}
 	})
 	t.Run("One user", func(t *testing.T) {
-		ctx, cancel := setupTest(t)
+		ctx, cancel, tx := setupTest(t)
 		defer cancel()
 
-		err := createTeam(ctx, "team")
+		err := createTeam(ctx, tx, "team")
 		if err != nil {
 			t.Errorf("CreateTeam expected to succeed, got: %v", err)
 		}
@@ -125,16 +119,16 @@ func TestAddUsers(t *testing.T) {
 			false,
 		}
 
-		err = repo.AddUsers(ctx, users)
+		err = repo.AddUsers(ctx, tx, users)
 		if err != nil {
 			t.Errorf("AddUsers expected to succeed, got: %v", err)
 		}
 	})
 	t.Run("Multiple users", func(t *testing.T) {
-		ctx, cancel := setupTest(t)
+		ctx, cancel, tx := setupTest(t)
 		defer cancel()
 
-		err := createTeam(ctx, "team")
+		err := createTeam(ctx, tx, "team")
 		if err != nil {
 			t.Errorf("CreateTeam expected to succeed, got: %v", err)
 		}
@@ -149,7 +143,7 @@ func TestAddUsers(t *testing.T) {
 			}
 		}
 
-		err = repo.AddUsers(ctx, users)
+		err = repo.AddUsers(ctx, tx, users)
 		if err != nil {
 			t.Errorf("AddUsers expected to succeed, got: %v", err)
 		}
@@ -158,19 +152,21 @@ func TestAddUsers(t *testing.T) {
 
 func TestGetById(t *testing.T) {
 	t.Run("Invalid id", func(t *testing.T) {
-		ctx, cancel := setupTest(t)
+		ctx, cancel, tx := setupTest(t)
 		defer cancel()
 
-		_, err := repo.GetById(ctx, "invalid")
-		if err == nil {
-			t.Error("GetUser expected to fail")
+		_, err := repo.GetById(ctx, tx, "invalid")
+		if err != nil {
+			if !errors.Is(err, errs.ErrBaseNotFound) {
+				t.Fatalf("TestGetById expected to fail with ErrBaseNotFound, got: %v", err)
+			}
 		}
 	})
 	t.Run("All ok", func(t *testing.T) {
-		ctx, cancel := setupTest(t)
+		ctx, cancel, tx := setupTest(t)
 		defer cancel()
 
-		err := createTeam(ctx, "team")
+		err := createTeam(ctx, tx, "team")
 		if err != nil {
 			t.Errorf("CreateTeam expected to succeed, got: %v", err)
 		}
@@ -181,12 +177,12 @@ func TestGetById(t *testing.T) {
 			TeamName: "team",
 			IsActive: true,
 		}
-		err = repo.AddUsers(ctx, users)
+		err = repo.AddUsers(ctx, tx, users)
 		if err != nil {
 			t.Errorf("AddUsers expected to succeed, got: %v", err)
 		}
 
-		res, err := repo.GetById(ctx, "u1")
+		res, err := repo.GetById(ctx, tx, "u1")
 		if err != nil {
 			t.Errorf("GetById expected to succeed, got: %v", err)
 		}
@@ -201,10 +197,10 @@ func TestGetById(t *testing.T) {
 
 func TestGetByTeamName(t *testing.T) {
 	t.Run("Invalid teamName", func(t *testing.T) {
-		ctx, cancel := setupTest(t)
+		ctx, cancel, tx := setupTest(t)
 		defer cancel()
 
-		res, err := repo.GetByTeamName(ctx, "invalid")
+		res, err := repo.GetByTeamName(ctx, tx, "invalid")
 		if err != nil {
 			t.Errorf("GetByTeamName expected to succeed, got: %v", err)
 		}
@@ -213,15 +209,15 @@ func TestGetByTeamName(t *testing.T) {
 		}
 	})
 	t.Run("No users", func(t *testing.T) {
-		ctx, cancel := setupTest(t)
+		ctx, cancel, tx := setupTest(t)
 		defer cancel()
 
-		err := createTeam(ctx, "team")
+		err := createTeam(ctx, tx, "team")
 		if err != nil {
 			t.Errorf("CreateTeam expected to succeed, got: %v", err)
 		}
 
-		res, err := repo.GetByTeamName(ctx, "team")
+		res, err := repo.GetByTeamName(ctx, tx, "team")
 		if err != nil {
 			t.Errorf("GetByTeamName expected to succeed, got: %v", err)
 		}
@@ -230,14 +226,14 @@ func TestGetByTeamName(t *testing.T) {
 		}
 	})
 	t.Run("All ok", func(t *testing.T) {
-		ctx, cancel := setupTest(t)
+		ctx, cancel, tx := setupTest(t)
 		defer cancel()
 
-		err := createTeam(ctx, "team0")
+		err := createTeam(ctx, tx, "team0")
 		if err != nil {
 			t.Errorf("CreateTeam expected to succeed, got: %v", err)
 		}
-		err = createTeam(ctx, "team1")
+		err = createTeam(ctx, tx, "team1")
 		if err != nil {
 			t.Errorf("CreateTeam expected to succeed, got: %v", err)
 		}
@@ -251,12 +247,12 @@ func TestGetByTeamName(t *testing.T) {
 				IsActive: true,
 			}
 		}
-		err = repo.AddUsers(ctx, users)
+		err = repo.AddUsers(ctx, tx, users)
 		if err != nil {
 			t.Errorf("AddUsers expected to succeed, got: %v", err)
 		}
 
-		res, err := repo.GetByTeamName(ctx, "team1")
+		res, err := repo.GetByTeamName(ctx, tx, "team1")
 		if err != nil {
 			t.Errorf("GetByTeamName expected to succeed, got: %v", err)
 		}
@@ -268,10 +264,10 @@ func TestGetByTeamName(t *testing.T) {
 
 func TestGetActiveByTeamName(t *testing.T) {
 	t.Run("Invalid teamName", func(t *testing.T) {
-		ctx, cancel := setupTest(t)
+		ctx, cancel, tx := setupTest(t)
 		defer cancel()
 
-		res, err := repo.GetActiveByTeamName(ctx, "invalid")
+		res, err := repo.GetActiveByTeamName(ctx, tx, "invalid")
 		if err != nil {
 			t.Errorf("GetActiveByTeamName expected to succeed, got: %v", err)
 		}
@@ -280,15 +276,15 @@ func TestGetActiveByTeamName(t *testing.T) {
 		}
 	})
 	t.Run("No users", func(t *testing.T) {
-		ctx, cancel := setupTest(t)
+		ctx, cancel, tx := setupTest(t)
 		defer cancel()
 
-		err := createTeam(ctx, "team")
+		err := createTeam(ctx, tx, "team")
 		if err != nil {
 			t.Errorf("CreateTeam expected to succeed, got: %v", err)
 		}
 
-		res, err := repo.GetActiveByTeamName(ctx, "team")
+		res, err := repo.GetActiveByTeamName(ctx, tx, "team")
 		if err != nil {
 			t.Errorf("GetActiveByTeamName expected to succeed, got: %v", err)
 		}
@@ -297,10 +293,10 @@ func TestGetActiveByTeamName(t *testing.T) {
 		}
 	})
 	t.Run("No users active", func(t *testing.T) {
-		ctx, cancel := setupTest(t)
+		ctx, cancel, tx := setupTest(t)
 		defer cancel()
 
-		err := createTeam(ctx, "team")
+		err := createTeam(ctx, tx, "team")
 		if err != nil {
 			t.Errorf("CreateTeam expected to succeed, got: %v", err)
 		}
@@ -314,12 +310,12 @@ func TestGetActiveByTeamName(t *testing.T) {
 				IsActive: false,
 			}
 		}
-		err = repo.AddUsers(ctx, users)
+		err = repo.AddUsers(ctx, tx, users)
 		if err != nil {
 			t.Errorf("AddUsers expected to succeed, got: %v", err)
 		}
 
-		res, err := repo.GetActiveByTeamName(ctx, "team")
+		res, err := repo.GetActiveByTeamName(ctx, tx, "team")
 		if err != nil {
 			t.Errorf("GetActiveByTeamName expected to succeed, got: %v", err)
 		}
@@ -328,10 +324,10 @@ func TestGetActiveByTeamName(t *testing.T) {
 		}
 	})
 	t.Run("All ok", func(t *testing.T) {
-		ctx, cancel := setupTest(t)
+		ctx, cancel, tx := setupTest(t)
 		defer cancel()
 
-		err := createTeam(ctx, "team")
+		err := createTeam(ctx, tx, "team")
 		if err != nil {
 			t.Errorf("CreateTeam expected to succeed, got: %v", err)
 		}
@@ -345,12 +341,12 @@ func TestGetActiveByTeamName(t *testing.T) {
 				IsActive: i%2 == 0,
 			}
 		}
-		err = repo.AddUsers(ctx, users)
+		err = repo.AddUsers(ctx, tx, users)
 		if err != nil {
 			t.Errorf("AddUsers expected to succeed, got: %v", err)
 		}
 
-		res, err := repo.GetActiveByTeamName(ctx, "team")
+		res, err := repo.GetActiveByTeamName(ctx, tx, "team")
 		if err != nil {
 			t.Errorf("GetActiveByTeamName expected to succeed, got: %v", err)
 		}
@@ -362,22 +358,24 @@ func TestGetActiveByTeamName(t *testing.T) {
 
 func TestUpdateUser(t *testing.T) {
 	t.Run("Invalid id", func(t *testing.T) {
-		ctx, cancel := setupTest(t)
+		ctx, cancel, tx := setupTest(t)
 		defer cancel()
 
 		newStatus := true
-		err := repo.UpdateUser(ctx, "u1", &entity.UserUpdate{
+		err := repo.UpdateUser(ctx, tx, "u1", &entity.UserUpdate{
 			IsActive: &newStatus,
 		})
-		if err == nil {
-			t.Error("UpdateUser expected to fail")
+		if err != nil {
+			if !errors.Is(err, errs.ErrBaseNotFound) {
+				t.Fatalf("UpdateUser expected to fail with ErrBaseNotFound, got: %v", err)
+			}
 		}
 	})
 	t.Run("No filters", func(t *testing.T) {
-		ctx, cancel := setupTest(t)
+		ctx, cancel, tx := setupTest(t)
 		defer cancel()
 
-		err := createTeam(ctx, "team")
+		err := createTeam(ctx, tx, "team")
 		if err != nil {
 			t.Errorf("CreateTeam expected to succeed, got: %v", err)
 		}
@@ -388,25 +386,23 @@ func TestUpdateUser(t *testing.T) {
 			TeamName: "team",
 			IsActive: false,
 		}
-		err = repo.AddUsers(ctx, users)
+		err = repo.AddUsers(ctx, tx, users)
 		if err != nil {
 			t.Errorf("AddUsers expected to succeed, got: %v", err)
 		}
 
-		err = repo.UpdateUser(ctx, "u1", &entity.UserUpdate{})
-		if err == nil {
-			t.Error("UpdateUser expected to fail")
-		} else {
+		err = repo.UpdateUser(ctx, tx, "u1", &entity.UserUpdate{})
+		if err != nil {
 			if !errors.Is(err, errs.ErrBaseBadFilter) {
 				t.Errorf("UpdateUser error expected to be ErrBaseBadFilter, got: %v", err)
 			}
 		}
 	})
 	t.Run("All ok", func(t *testing.T) {
-		ctx, cancel := setupTest(t)
+		ctx, cancel, tx := setupTest(t)
 		defer cancel()
 
-		err := createTeam(ctx, "team")
+		err := createTeam(ctx, tx, "team")
 		if err != nil {
 			t.Errorf("CreateTeam expected to succeed, got: %v", err)
 		}
@@ -417,13 +413,13 @@ func TestUpdateUser(t *testing.T) {
 			TeamName: "team",
 			IsActive: false,
 		}
-		err = repo.AddUsers(ctx, users)
+		err = repo.AddUsers(ctx, tx, users)
 		if err != nil {
 			t.Errorf("AddUsers expected to succeed, got: %v", err)
 		}
 
 		newStatus := true
-		err = repo.UpdateUser(ctx, "u1", &entity.UserUpdate{
+		err = repo.UpdateUser(ctx, tx, "u1", &entity.UserUpdate{
 			IsActive: &newStatus,
 		})
 		if err != nil {

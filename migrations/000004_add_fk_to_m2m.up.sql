@@ -1,0 +1,2 @@
+ALTER TABLE pull_requests_users ADD CONSTRAINT FK_pull_requests_users_1 FOREIGN KEY (user_id) REFERENCES users (id);
+ALTER TABLE pull_requests_users ADD CONSTRAINT FK_pull_requests_users_2 FOREIGN KEY (pr_id) REFERENCES pull_requests(id);
