@@ -32,12 +32,12 @@ func main() {
 	if err != nil {
 		rootLogger.Error("failed to Getwd", err)
 	}
-	err = godotenv.Load(filepath.Join(wd, ".env"))
+	err = godotenv.Load(filepath.Join(wd, ".env"), filepath.Join(wd, "local.env"))
 	if err != nil {
-		rootLogger.Info(".env file not found, using default environment variables", "err", err)
+		rootLogger.Info("error loading .env or local.env", "err", err)
 	}
 
-	appPort := os.Getenv("APP_PORT")
+	appPort := 8080
 	dbUrl := os.Getenv("DATABASE_URL")
 
 	ctx := context.Background()
@@ -92,7 +92,7 @@ func main() {
 	})
 
 	rootLogger.Info("Starting server", "port", appPort)
-	err = http.ListenAndServe(fmt.Sprintf(":%s", appPort), router)
+	err = http.ListenAndServe(fmt.Sprintf(":%d", appPort), router)
 	if err != nil {
 		rootLogger.Info("Failed starting server", "port", appPort, "err", err)
 		return

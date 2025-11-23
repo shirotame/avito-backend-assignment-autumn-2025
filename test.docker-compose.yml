@@ -1,0 +1,39 @@
+services:
+  test_db:
+    image: postgres:18-alpine3.22
+    volumes:
+      - tests-db-data:/var/lib/postgresql/data/
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: test_db
+    expose:
+      - "5432"
+
+  migrator:
+    image: migrate/migrate
+    command:
+      ["-path", "/migrations", "-database", "postgresql://test:test@test_db:5432/test_db?sslmode=disable", "up"]
+    volumes:
+      - ./migrations:/migrations
+    depends_on:
+      test_db:
+        condition: service_started
+
+    restart: "on-failure"
+
+  prservice:
+    build:
+      context: .
+      dockerfile: test.Dockerfile
+    command: go test ./test/...
+    restart: "no"
+    environment:
+      TEST_DATABASE_URL: "postgresql://test:test@test_db:5432/test_db?sslmode=disable"
+    ports:
+      - "8080:8080"
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
+volumes:
+  tests-db-data:

@@ -27,10 +27,6 @@ func ErrBadFilter(msg string) error {
 	return fmt.Errorf("%w, message: %v", ErrBaseBadFilter, msg)
 }
 
-func ErrBadRequest(msg string) error {
-	return fmt.Errorf("%w, message: %v", ErrBaseBadRequest, msg)
-}
-
 func ErrInternal(data string, errorWrap error) error {
 	if errorWrap == nil {
 		return fmt.Errorf("%w: %s", ErrBaseInternal, data)

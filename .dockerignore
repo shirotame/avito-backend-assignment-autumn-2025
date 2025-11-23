@@ -1,0 +1,14 @@
+.git/
+build/
+
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+*.test
+
+local.env
+
+test/**/test.env
