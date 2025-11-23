@@ -1,10 +1,10 @@
 package handler
 
 import (
+	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/entity"
+	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/service"
 	"log/slog"
 	"net/http"
-	"prservice/internal/entity"
-	"prservice/internal/service"
 )
 
 type PullRequestHandler struct {

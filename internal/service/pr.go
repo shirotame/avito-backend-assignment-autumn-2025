@@ -3,11 +3,11 @@ package service
 import (
 	"context"
 	"errors"
+	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/entity"
+	errs "github.com/shirotame/avito-backend-assignment-autumn-2025/internal/errors"
+	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/repository"
 	"log/slog"
 	"math/rand/v2"
-	"prservice/internal/entity"
-	errs "prservice/internal/errors"
-	"prservice/internal/repository"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"

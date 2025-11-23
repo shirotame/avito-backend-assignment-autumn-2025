@@ -1,11 +1,11 @@
 package handler
 
 import (
+	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/entity"
+	errs "github.com/shirotame/avito-backend-assignment-autumn-2025/internal/errors"
+	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/service"
 	"log/slog"
 	"net/http"
-	"prservice/internal/entity"
-	errs "prservice/internal/errors"
-	"prservice/internal/service"
 )
 
 type TeamHandler struct {

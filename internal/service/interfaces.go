@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	"prservice/internal/entity"
+	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/entity"
 )
 
 type BaseUserService interface {

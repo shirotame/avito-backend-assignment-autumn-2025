@@ -3,10 +3,10 @@ package handler
 import (
 	"encoding/json"
 	"errors"
+	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/entity"
+	errs "github.com/shirotame/avito-backend-assignment-autumn-2025/internal/errors"
+	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/errors/codes"
 	"net/http"
-	"prservice/internal/entity"
-	errs "prservice/internal/errors"
-	"prservice/internal/errors/codes"
 )
 
 func mapToErrorDTO(err error) entity.ErrorDTO {
@@ -98,6 +98,7 @@ func WriteError(w http.ResponseWriter, err error) {
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	w.Write(jsonItem)
 }

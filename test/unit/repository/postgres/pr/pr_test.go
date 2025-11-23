@@ -3,12 +3,12 @@ package pr
 import (
 	"context"
 	"errors"
+	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/entity"
+	errs "github.com/shirotame/avito-backend-assignment-autumn-2025/internal/errors"
+	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/repository"
+	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/repository/postgres"
 	"log/slog"
 	"os"
-	"prservice/internal/entity"
-	errs "prservice/internal/errors"
-	"prservice/internal/repository"
-	"prservice/internal/repository/postgres"
 	"testing"
 	"time"
 

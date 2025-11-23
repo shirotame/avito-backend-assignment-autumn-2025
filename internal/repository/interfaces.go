@@ -2,7 +2,7 @@ package repository
 
 import (
 	"context"
-	"prservice/internal/entity"
+	"github.com/shirotame/avito-backend-assignment-autumn-2025/internal/entity"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
