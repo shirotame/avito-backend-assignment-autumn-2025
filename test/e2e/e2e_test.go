@@ -211,6 +211,48 @@ func TestCreatePullRequest(t *testing.T) {
 }
 
 func TestReassignPullRequest(t *testing.T) {
+	t.Run("after merge", func(t *testing.T) {
+		ctx := setupTest(t)
+
+		users := make([]entity.UserDTO, 10)
+		for i := range users {
+			users[i] = entity.UserDTO{
+				UserId:   fmt.Sprintf("u%d", i),
+				Username: fmt.Sprintf("user%d", i),
+				IsActive: true,
+			}
+		}
+		_, err := teamService.AddTeam(ctx, entity.TeamDTO{
+			TeamName: "team1",
+			Members:  users,
+		})
+		if err != nil {
+			t.Fatalf("AddTeam should succeed, got: %v", err)
+		}
+
+		res, err := prService.CreatePullRequest(ctx, entity.PullRequestCreateDTO{
+			PullRequestId:   "pr1",
+			PullRequestName: "pr1",
+			AuthorId:        "u1",
+		})
+		if err != nil {
+			t.Fatalf("CreatePullRequest should succeed, got: %v", err)
+		}
+
+		_, err = prService.MergePullRequest(ctx, entity.MergePullRequestDTO{
+			PullRequestId: "pr1",
+		})
+
+		_, err = prService.ReassignPullRequest(ctx, entity.ReassignPullRequestDTO{
+			PullRequestId: "pr1",
+			OldReviewerId: res.PullRequest.AssignedReviewers[0],
+		})
+		if err != nil {
+			if !errors.Is(err, errs.ErrReassignOnMergedPR) {
+				t.Fatalf("CreatePullRequest expected ErrReassignOnMergedPR, got: %v", err)
+			}
+		}
+	})
 	t.Run(">2 available", func(t *testing.T) {
 		ctx := setupTest(t)
 
